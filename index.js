@@ -12,7 +12,7 @@ import readlineSync from "readline-sync";
 import os from "os";
 import { smsg } from "./lib/message.js";
 import db from "./lib/system/database.js";
-import { startSubBot } from './core/subs.js';
+import { startSubBot } from './lib/subs.js';
 import { exec } from "child_process";
 
 const log = {
