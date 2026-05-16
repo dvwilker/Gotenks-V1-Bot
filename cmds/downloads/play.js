@@ -3,7 +3,7 @@ import fetch from 'node-fetch'
 import sharp from 'sharp'
 import axios from 'axios'
 import crypto from 'crypto'
-import { getBuffer } from '../../core/message.js'
+import { getBuffer } from '../../lib/message.js'
 
 const limit = 100
 
