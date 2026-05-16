@@ -315,11 +315,11 @@ export default {
         const infoMessage = `
 *Descargando...*
 
-> ◦ Título: ${title}
-> ◦ Duración: ${timestamp}
-> ◦ Vistas: ${vistas}
-> ◦ Canal: ${canal}
-> ◦ Publicado: ${ago}
+> 🐉 Título: ${title}
+> 🌀 Duración: ${timestamp}
+> 🐉 Vistas: ${vistas}
+> 🌀 Canal: ${canal}
+> 🐉 Publicado: ${ago}
 `
 
         let thumb
