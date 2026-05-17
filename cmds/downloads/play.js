@@ -255,7 +255,7 @@ export default {
     'ytmp3'
   ],
 
-  category: 'download',
+  category: 'descargas',
 
   run: async (
     client,
