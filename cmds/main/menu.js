@@ -12,7 +12,7 @@ const tags = {
   game: '🎮 ENTRENAMIENTO',
   gacha: '🎲 GACHA GOTENKS',
   reacciones: '💥 REACCIONES',
-  group: '👥 DOJO GOTENKS',
+  gropo: '👥 DOJO GOTENKS',
   search: '🔎 BUSCADOR KAME',
   sticker: '📌 STICKERS',
   ia: '🤖 ANDROID 16',
