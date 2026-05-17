@@ -75,15 +75,18 @@ export default {
         hour12: true
       });
 
-      const help = Object.values(global.plugins || {})
-        .filter(p => p && !p.disabled)
-        .map(p => ({
-          help: Array.isArray(p.command) ? p.command : [p.command],
-          tags: Array.isArray(p.category) ? p.category : [p.category],
-          prefix: 'customPrefix' in p,
-          limit: p.limit,
-          premium: p.premium,
-        }));
+      const help = [];
+      for (const [cmdName, cmdData] of global.comandos || new Map()) {
+        if (cmdData && !cmdData.disabled) {
+          help.push({
+            help: Array.isArray(cmdData.command) ? cmdData.command : [cmdData.command],
+            tags: Array.isArray(cmdData.category) ? cmdData.category : [cmdData.category],
+            prefix: false,
+            limit: cmdData.limit || false,
+            premium: cmdData.premium || false,
+          });
+        }
+      }
 
       const botId = client.user.id.split(':')[0] + '@s.whatsapp.net';
       const botSettings = global.db.data.settings[botId] || {};
@@ -98,8 +101,19 @@ export default {
         bannerFinal = fs.readFileSync(imagePath);
       }
 
-      const isOficialBot = botId === global.client?.user?.id?.split(':')[0] + '@s.whatsapp.net';
+      const isOficialBot = botId === (global.client?.user?.id?.split(':')[0] + '@s.whatsapp.net');
       const tipo = isOficialBot ? '🐉 GOTENKS PRINCIPAL' : '🌀 SUB GOTENKS';
+
+      let uptimeSeconds = 0;
+      if (global.startTime) {
+        uptimeSeconds = (Date.now() - global.startTime) / 1000;
+      } else if (client.uptime) {
+        uptimeSeconds = client.uptime / 1000;
+      } else {
+        uptimeSeconds = process.uptime();
+      }
+      
+      const uptime = clockString(uptimeSeconds * 1000);
 
       const menuConfig = defaultMenu;
 
@@ -110,7 +124,7 @@ export default {
             .filter(menu => menu.tags?.includes(tag))
             .map(menu => menu.help.map(h => 
               menuConfig.body
-                .replace(/%cmd/g, menu.prefix ? h : `${usedPrefix}${h}`)
+                .replace(/%cmd/g, `${usedPrefix}${h}`)
                 .replace(/%islimit/g, menu.limit ? '🔒' : '')
                 .replace(/%isPremium/g, menu.premium ? '💎' : '🌀')
             ).join('\n')).join('\n');
@@ -133,7 +147,7 @@ export default {
         name: name,
         date: date,
         time: time,
-        uptime: clockString(client.uptime || 0),
+        uptime: uptime,
         tipo: tipo,
         readmore: readMore,
         greeting: getUwUGreeting(horaVenezuela.getHours()),
@@ -181,10 +195,18 @@ const more = String.fromCharCode(8206);
 const readMore = more.repeat(4001);
 
 function clockString(ms) {
-  let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000);
-  let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60;
-  let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60;
-  return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+  const dias = Math.floor(ms / 86400000);
+  const horas = Math.floor((ms % 86400000) / 3600000);
+  const minutos = Math.floor((ms % 3600000) / 60000);
+  const segundos = Math.floor((ms % 60000) / 1000);
+  
+  const partes = [];
+  if (dias > 0) partes.push(`${dias}d`);
+  if (horas > 0 || dias > 0) partes.push(`${horas}h`);
+  if (minutos > 0 || horas > 0 || dias > 0) partes.push(`${minutos}m`);
+  partes.push(`${segundos}s`);
+  
+  return partes.join(' ');
 }
 
 function getUwUGreeting(hour) {
