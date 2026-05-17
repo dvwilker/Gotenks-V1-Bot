@@ -29,7 +29,7 @@ const defaultMenu = {
 │ *%name*, %greeting
 │
 │ 🐉 𝑇𝑖𝑝𝑜: %tipo
-│ ⚡ 𝑁𝑖𝑣𝑒𝑙: 100%
+│ ⚡ 𝑁𝑖𝑣𝑒𝑙: %level
 │ 📅 %date
 │ 🕐 %time
 │ ⏱️ %uptime
@@ -38,7 +38,7 @@ const defaultMenu = {
 ├──────────────────────────────┤
 `.trimStart(),
   header: '\n│ ⚡ %category\n│\n',
-  body: '│   🌀 %cmd %islimit %isPremium',
+  body: '│   🌀 %cmd',
   footer: '\n│',
   after: `
 ├──────────────────────────────┤
@@ -55,7 +55,7 @@ export default {
   run: async (client, m, args, usedPrefix, command) => {
     try {
       const { exp, limit, level } = global.db.data.users[m.sender] || {};
-      const { min, xp, max } = xpRange(level, global.multiplier);
+      const { min, xp, max } = xpRange(level || 0, global.multiplier || 1);
       const name = m.pushName || 'Usuario';
 
       const ahora = new Date();
@@ -75,16 +75,16 @@ export default {
         hour12: true
       });
 
-      const help = [];
+      const comandosPorCategoria = new Map();
+      
       for (const [cmdName, cmdData] of global.comandos || new Map()) {
-        if (cmdData && !cmdData.disabled) {
-          help.push({
-            help: Array.isArray(cmdData.command) ? cmdData.command : [cmdData.command],
-            tags: Array.isArray(cmdData.category) ? cmdData.category : [cmdData.category],
-            prefix: false,
-            limit: cmdData.limit || false,
-            premium: cmdData.premium || false,
-          });
+        if (cmdData && !cmdData.disabled && cmdData.category) {
+          const categoria = Array.isArray(cmdData.category) ? cmdData.category[0] : cmdData.category;
+          if (!comandosPorCategoria.has(categoria)) {
+            comandosPorCategoria.set(categoria, new Set());
+          }
+          const cmdPrincipal = Array.isArray(cmdData.command) ? cmdData.command[0] : cmdData.command;
+          comandosPorCategoria.get(categoria).add(cmdPrincipal);
         }
       }
 
@@ -107,12 +107,9 @@ export default {
       let uptimeSeconds = 0;
       if (global.startTime) {
         uptimeSeconds = (Date.now() - global.startTime) / 1000;
-      } else if (client.uptime) {
-        uptimeSeconds = client.uptime / 1000;
       } else {
         uptimeSeconds = process.uptime();
       }
-      
       const uptime = clockString(uptimeSeconds * 1000);
 
       const menuConfig = defaultMenu;
@@ -120,15 +117,15 @@ export default {
       const _text = [
         menuConfig.before,
         ...Object.keys(tags).map(tag => {
-          const cmds = help
-            .filter(menu => menu.tags?.includes(tag))
-            .map(menu => menu.help.map(h => 
-              menuConfig.body
-                .replace(/%cmd/g, `${usedPrefix}${h}`)
-                .replace(/%islimit/g, menu.limit ? '🔒' : '')
-                .replace(/%isPremium/g, menu.premium ? '💎' : '🌀')
-            ).join('\n')).join('\n');
-          return cmds ? [menuConfig.header.replace(/%category/g, tags[tag]), cmds, menuConfig.footer].join('\n') : '';
+          const comandos = comandosPorCategoria.get(tag) || new Set();
+          if (comandos.size === 0) return '';
+          
+          const cmdsList = Array.from(comandos)
+            .sort()
+            .map(cmd => menuConfig.body.replace(/%cmd/g, `${usedPrefix}${cmd}`))
+            .join('\n');
+          
+          return cmdsList ? [menuConfig.header.replace(/%category/g, tags[tag]), cmdsList, menuConfig.footer].join('\n') : '';
         }).filter(Boolean),
         menuConfig.after
       ].join('\n');
