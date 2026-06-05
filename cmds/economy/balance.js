@@ -1,14 +1,12 @@
-import db from '#db';
-
 export default {
   command: ['balance', 'bal', 'coins', 'bank'],
   category: 'economy',
   description: 'Ver cuantos coins tienes.',
   run: async (client, m, args, usedPrefix, command) => {
     const chatId = m.chat;
-    const chatData = db.getChat(chatId);
+    const chatData = global.db.data.chats[chatId];
     const botId = client.user.id.split(':')[0] + "@s.whatsapp.net";
-    const botSettings = db.getSettings(botId);
+    const botSettings = global.db.data.settings[botId];
     const monedas = botSettings.currency;
     
     if (chatData.adminonly || !chatData.economy) {
@@ -16,13 +14,13 @@ export default {
     }
     
     const who = m.mentionedJid?.[0] || m.quoted?.sender || m.sender;
-    const user = db.getChatUser(chatId, who);
+    const user = global.db.data.chats[chatId]?.users?.[who];
     
     if (!user) {
       return m.reply(`🐉🌀 El usuario mencionado no está registrado en el bot.\n⚡ Usa *${usedPrefix}work* para comenzar.`);
     }
     
-    const users = db.getUser(who);
+    const users = global.db.data.users[who];
     const total = (user.coins || 0) + (user.bank || 0);
     
     const bal = `
