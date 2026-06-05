@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import fetch from 'node-fetch';
-import exif from '#lib/exif';
+import exif from '../../lib/exif.js';
 const { writeExif } = exif;
 
 export default {
@@ -51,16 +51,16 @@ export default {
 ⚡ Ejemplo: *${usedPrefix + command} -c -blur Pack | Autor*`;
         return m.reply(helpText);
       }
-      
+
       const quoted = m.quoted || m;
       const mime = (quoted.msg || quoted).mimetype || '';
       let user = global.db.data.users[m.sender];
-      const name = user.name;
-      const meta1 = user.metadatos ? String(user.metadatos).trim() : '';
-      const meta2 = user.metadatos2 ? String(user.metadatos2).trim() : '';
+      const name = user?.name || m.sender.split('@')[0];
+      const meta1 = user?.metadatos ? String(user.metadatos).trim() : '';
+      const meta2 = user?.metadatos2 ? String(user.metadatos2).trim() : '';
       let texto1 = meta1 ? meta1 : `🐉 Gotenks V1 Bot 🌀`;
       let texto2 = meta1 ? (meta2 ? meta2 : '') : `@${name}`;
-      
+
       let urlArg = null;
       let argsWithoutUrl = [];
       for (let arg of args) {
@@ -70,21 +70,21 @@ export default {
           argsWithoutUrl.push(arg);
         }
       }
-      
+
       let filteredText = argsWithoutUrl.join(' ').replace(/-\w+/g, '').trim();
       let marca = filteredText.split(/[\u2022|]/).map(part => part.trim());
       let pack = marca[0] || texto1;
       let author = marca.length > 1 ? marca[1] : (filteredText ? (meta1 ? texto2 : '') : texto2);
-      
+
       const shapeArgs = { '-c': 'circle', '-t': 'triangle', '-s': 'star', '-r': 'roundrect', '-h': 'hexagon', '-d': 'diamond', '-f': 'frame', '-b': 'border', '-w': 'wave', '-m': 'mirror', '-o': 'octagon', '-y': 'pentagon', '-e': 'ellipse', '-z': 'cross', '-v': 'heart', '-x': 'cover', '-i': 'contain' };
       const effectArgs = { '-blur': 'blur', '-sepia': 'sepia', '-sharpen': 'sharpen', '-brighten': 'brighten', '-darken': 'darken', '-invert': 'invert', '-grayscale': 'grayscale', '-rotate90': 'rotate90', '-rotate180': 'rotate180', '-flip': 'flip', '-flop': 'flop', '-negate': 'negate', '-tint': 'tint' };
-      
+
       const effects = [];
       for (const arg of argsWithoutUrl) {
         if (shapeArgs[arg]) effects.push({ type: 'shape', value: shapeArgs[arg] });
         else if (effectArgs[arg]) effects.push({ type: 'effect', value: effectArgs[arg] });
       }
-      
+
       const sendWebpWithExif = async (webpBuffer) => {
         const media = { mimetype: 'webp', data: webpBuffer };
         const metadata = { packname: pack, author: author, categories: [''] };
@@ -92,7 +92,7 @@ export default {
         await client.sendMessage(m.chat, { sticker: { url: stickerPath } }, { quoted: m });
         fs.unlinkSync(stickerPath);
       };
-      
+
       const convertToGif = async (inputPath) => {
         const gifPath = `./tmp/conv-${Date.now()}.gif`;
         await new Promise((resolve, reject) => {
@@ -106,7 +106,7 @@ export default {
         });
         return gifPath;
       };
-      
+
       const processWithFFmpeg = async (inputPath, isVideo = false) => {
         const outputPath = `./tmp/sticker-${Date.now()}.webp`;
         const vf = buildFFmpegFilters(effects);
@@ -129,12 +129,12 @@ export default {
         fs.unlinkSync(outputPath);
         await sendWebpWithExif(data);
       };
-      
+
       const isAnimatedWebp = (buffer) => {
         if (!Buffer.isBuffer(buffer) || buffer.length < 32) return false;
         return buffer.indexOf(Buffer.from('ANIM')) !== -1 || buffer.indexOf(Buffer.from('ANMF')) !== -1;
       };
-      
+
       const handleWebpBuffer = async (buffer) => {
         const animated = isAnimatedWebp(buffer);
         const inputPath = `./tmp/in-${Date.now()}.webp`;
@@ -154,7 +154,7 @@ export default {
         }
         fs.unlinkSync(inputPath);
       };
-      
+
       if (/image/.test(mime) || /webp/.test(mime)) {
         let buffer = await quoted.download();
         if (/webp/.test(mime)) {
