@@ -3,12 +3,10 @@ import fetch from 'node-fetch'
 import sharp from 'sharp'
 import { getBuffer } from '../../lib/message.js'
 
-const limit = 100
-
 const isYTUrl = (url) => /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/).+$/i.test(url)
 
 export default {
-  command: ['play', 'mp3', 'playaudio', 'ytmp3', 'play2', 'mp4', 'playvideo', 'ytmp4'],
+  command: ['play', 'mp3', 'playaudio', 'ytmp3'],
   category: 'descargas',
   run: async (client, m, args, usedPrefix, command) => {
     try {
@@ -18,7 +16,6 @@ export default {
       }
 
       const esURL = isYTUrl(text)
-      const isAudio = ['play', 'mp3', 'playaudio', 'ytmp3'].includes(command)
       let url, title, videoInfo
 
       if (!esURL) {
@@ -39,7 +36,7 @@ export default {
         const infoMessage = `
 🐉 *GOTENKS V1 DOWNLOADER* 🌀
 
-⚡ *Descargando...*
+⚡ *Descargando audio...*
 
 > 🐉 Título: ${title}
 > 🌀 Duración: ${timestamp}
@@ -60,17 +57,12 @@ export default {
         )
       } else {
         url = text
-        title = isAudio ? 'Audio Gotenks' : 'Video Gotenks'
+        title = 'Audio Gotenks'
       }
 
       const loadingMsg = await client.sendMessage(m.chat, { text: '🎵 Descargando audio... ⚡' }, { quoted: m })
 
-      let apiUrl
-      if (isAudio) {
-        apiUrl = `https://api-gohan-v1.onrender.com/download/ytaudio?url=${encodeURIComponent(url)}`
-      } else {
-        apiUrl = `https://api-gohan-v1.onrender.com/download/ytvideo?url=${encodeURIComponent(url)}`
-      }
+      const apiUrl = `https://api-gohan-v1.onrender.com/download/ytaudio?url=${encodeURIComponent(url)}`
 
       const res = await fetch(apiUrl)
       const data = await res.json()
@@ -103,35 +95,12 @@ export default {
         } catch {}
       }
 
-      if (isAudio) {
-        await client.sendMessage(m.chat, {
-          document: { url: dl },
-          mimetype: 'audio/mpeg',
-          fileName: `${videoTitle}.mp3`,
-          jpegThumbnail: thumbBuffer
-        }, { quoted: m })
-      } else {
-        const resCheck = await fetch(dl)
-        const contentLength = resCheck.headers.get('Content-Length')
-        const fileSize = contentLength ? parseInt(contentLength, 10) / (1024 * 1024) : null
-        const exceedsLimit = fileSize ? fileSize >= limit : true
-
-        if (exceedsLimit) {
-          await client.sendMessage(m.chat, {
-            document: { url: dl },
-            fileName: `${videoTitle}.mp4`,
-            mimetype: 'video/mp4',
-            caption: '🐉🌀 Gotenks V1 Bot 🌀🐉'
-          }, { quoted: m })
-        } else {
-          await client.sendMessage(m.chat, {
-            video: { url: dl },
-            fileName: `${videoTitle}.mp4`,
-            mimetype: 'video/mp4',
-            jpegThumbnail: thumbBuffer
-          }, { quoted: m })
-        }
-      }
+      await client.sendMessage(m.chat, {
+        document: { url: dl },
+        mimetype: 'audio/mpeg',
+        fileName: `${videoTitle}.mp3`,
+        jpegThumbnail: thumbBuffer
+      }, { quoted: m })
 
       await m.react('✅')
 
