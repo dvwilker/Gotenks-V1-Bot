@@ -21,13 +21,9 @@ export default {
         headers: { "User-Agent": "Mozilla/5.0" }
       })
 
-      let respuesta = data?.result || data?.data?.result || data?.response || data
+      let respuesta = data?.text || data?.result || data?.response
 
-      if (typeof respuesta === 'object') {
-        respuesta = JSON.stringify(respuesta)
-      }
-
-      if (!respuesta || respuesta.includes('error') || respuesta.length < 2) {
+      if (!respuesta || respuesta.length < 2) {
         respuesta = "🐉🌀 ¡Ja! No entendí eso, tipo. Pregunta de nuevo."
       }
 
