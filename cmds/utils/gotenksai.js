@@ -17,13 +17,17 @@ export default {
 
     try {
       const url = `https://api-gohan-v1.onrender.com/ai/gemini?text=${encodeURIComponent(prompt)}`
-      const { data } = await axios.get(url, {
+      const response = await axios.get(url, {
         headers: { "User-Agent": "Mozilla/5.0" }
       })
 
-      let respuesta = data?.text || data?.result || data?.response
+      let respuesta = response.data
 
-      if (!respuesta || respuesta.length < 2) {
+      if (typeof respuesta === 'object' && respuesta !== null) {
+        respuesta = respuesta.text || respuesta.result || respuesta.response || JSON.stringify(respuesta)
+      }
+
+      if (!respuesta || respuesta.length < 2 || respuesta === '[object Object]') {
         respuesta = "🐉🌀 ¡Ja! No entendí eso, tipo. Pregunta de nuevo."
       }
 
