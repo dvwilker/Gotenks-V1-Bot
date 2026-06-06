@@ -1,4 +1,4 @@
-import axios from 'axios'
+import fetch from 'node-fetch'
 
 export default {
   command: ['gotenks', 'gotenksai', 'ia', 'bot'],
@@ -8,27 +8,31 @@ export default {
     const text = args.join(' ').trim()
     
     if (!text) {
-      return m.reply(`🐉🌀 ¡Ja! ¿Qué quieres, tipo?\n⚡ Escribe *${usedPrefix}gotenks <mensaje>* y te contesto.\n\n⚡ Ejemplo: *${usedPrefix}gotenks Hola*`)
+      return m.reply(`🐉🌀 ¡Ja! ¿Qué quieres, tipo?\n⚡ Escribe *${usedPrefix}gotenks <mensaje>* y te contesto.`)
     }
 
     await client.sendPresenceUpdate('composing', m.chat)
 
-    const prompt = `Actúa como Gotenks, el guerrero Saiyan fusionado de Goten y Trunks. Hablas con energía, eres arrogante, divertido, presumido. Usas frases como "¡Soy Gotenks!", "¡Te voy a dar una paliza!", "¡Ja!", "¡Oh yeah!". Usas emojis como 🐉🌀⚡🔥😎👊. Llamas a los usuarios "tipo" o "amigo". NUNCA digas que eres una IA. Responde en español neutro y corto. Ahora responde a esto: ${text}`
+    const prompt = `Actúa como Gotenks. Responde como él, divertido y arrogante. Respuesta corta. Pregunta: ${text}`
 
     try {
       const url = `https://api-gohan-v1.onrender.com/ai/gemini?text=${encodeURIComponent(prompt)}`
-      const response = await axios.get(url, {
-        headers: { "User-Agent": "Mozilla/5.0" }
-      })
-
-      let respuesta = response.data
-
-      if (typeof respuesta === 'object' && respuesta !== null) {
-        respuesta = respuesta.text || respuesta.result || respuesta.response || JSON.stringify(respuesta)
+      const res = await fetch(url)
+      const data = await res.text()
+      
+      console.log('RESPUESTA CRUDA:', data)
+      
+      let respuesta = data
+      
+      try {
+        const parsed = JSON.parse(data)
+        respuesta = parsed.text || parsed.result || parsed.response || data
+      } catch (e) {
+        respuesta = data
       }
 
-      if (!respuesta || respuesta.length < 2 || respuesta === '[object Object]') {
-        respuesta = "🐉🌀 ¡Ja! No entendí eso, tipo. Pregunta de nuevo."
+      if (!respuesta || respuesta === '[object Object]' || respuesta.includes('[object')) {
+        respuesta = "🐉🌀 ¡Ja! No entendí eso, tipo."
       }
 
       await client.sendPresenceUpdate('paused', m.chat)
@@ -37,7 +41,7 @@ export default {
     } catch (e) {
       console.error('[GOTENKS V1 ERROR]', e.message)
       await client.sendPresenceUpdate('paused', m.chat).catch(() => {})
-      await m.reply(`🐉🌀 ¡Ups! Algo salió mal.\n⚡ Error: ${e.message}`)
+      await m.reply(`🐉🌀 Error: ${e.message}`)
     }
   }
 }
