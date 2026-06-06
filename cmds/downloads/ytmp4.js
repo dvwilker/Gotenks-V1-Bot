@@ -1,14 +1,14 @@
 import yts from 'yt-search'
 import fetch from 'node-fetch'
 
-const cmd = {
+export default {
   command: ['play2', 'mp4', 'ytmp4', 'ytvideo', 'playvideo'],
   category: 'descargas',
   description: 'Descargar un vídeo de YouTube.',
-  run: async ({ msg, sock, args, usedPrefix, command }) => {
+  run: async (client, m, args, usedPrefix, command) => {
     try {
       if (!args[0]) {
-        return msg.reply('🐉🌀 Por favor, menciona el nombre o URL del video que deseas descargar')
+        return m.reply('🐉🌀 Por favor, menciona el nombre o URL del video que deseas descargar')
       }
 
       const input_text = args.join(' ').trim()
@@ -43,27 +43,27 @@ const cmd = {
 > 🌐 Enlace: *${url}*`
 
           if (thumbnail) {
-            await sock.sendMessage(msg.chat, {
+            await client.sendMessage(m.chat, {
               image: { url: thumbnail },
               caption: info_message
-            }, { quoted: msg })
+            }, { quoted: m })
           } else {
-            await msg.reply(info_message)
+            await m.reply(info_message)
           }
         }
       } catch {}
 
       if (!isYTUrl(url)) {
-        return msg.reply('🐉🌀 No encontré un video válido de YouTube.')
+        return m.reply('🐉🌀 No encontré un video válido de YouTube.')
       }
 
       const video = await getVideoFromRyze(url)
 
       if (!video?.url) {
-        return msg.reply('🐉🌀 No se pudo descargar el *video*, intenta más tarde.')
+        return m.reply('🐉🌀 No se pudo descargar el *video*, intenta más tarde.')
       }
 
-      await sock.sendMessage(msg.chat, {
+      await client.sendMessage(m.chat, {
         video: { url: video.url },
         fileName: `${sanitizeFileName(video.title || title)}.mp4`,
         mimetype: 'video/mp4',
@@ -73,17 +73,16 @@ const cmd = {
 🐉 Tamaño: *${video.size || 'Desconocido'}*
 
 *𝐹𝑢𝑠𝑖𝑜𝑛 𝐻𝑎!* 🌀🐉`
-      }, { quoted: msg })
+      }, { quoted: m })
 
     } catch (e) {
-      await msg.reply(
+      console.error(e)
+      await m.reply(
         `🐉🌀 Error al ejecutar el comando *${usedPrefix + command}*.\n⚡ [Error: *${e.message}*]`
       )
     }
   }
 }
-
-export default cmd
 
 const ryze_api = 'https://ryzecodes.xyz/api/scrapers/36/run'
 const ryze_key = 'ryzk0cdn'
@@ -98,7 +97,6 @@ const getVideoId = (text = '') => {
   const match = text.match(
     /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/|v\/))([a-zA-Z0-9_-]{11})/
   )
-
   return match?.[1] || null
 }
 
@@ -124,7 +122,6 @@ async function getVideoInfo(input, video_id) {
   if (video_id) {
     try {
       const info = await yts({ videoId: video_id })
-
       if (info?.videoId) {
         return {
           ...info,
@@ -137,7 +134,6 @@ async function getVideoInfo(input, video_id) {
 
   const search = await yts(input)
   const video = search.videos?.[0] || search.all?.find(v => v.type === 'video')
-
   return video || null
 }
 
@@ -164,11 +160,7 @@ async function getVideoFromRyze(url) {
     throw new Error(res?.error || result?.error || 'API sin resultado válido')
   }
 
-  const video_url =
-    result.file_url ||
-    result.download_urls?.[0] ||
-    null
-
+  const video_url = result.file_url || result.download_urls?.[0] || null
   if (!video_url) return null
 
   return {
